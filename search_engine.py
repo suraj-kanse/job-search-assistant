@@ -202,7 +202,7 @@ def calculate_fitness(job, profile):
     if seniority_score > 80:
         reasons.append("suitable for entry-level")
     else:
-        reasons.append("seniority mismatch ⚠️")
+        reasons.append("seniority mismatch [!]")
         
     reason_str = f"({', '.join(reasons)})"
     return round(total_score), reason_str

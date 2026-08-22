@@ -12,7 +12,7 @@ def format_report(jobs, zip_path):
     
     report = []
     report.append("=========================================")
-    report.append(f"      DAILY JOB SEARCH REPORT — {today}")
+    report.append(f"      DAILY JOB SEARCH REPORT - {today}")
     report.append("=========================================")
     report.append(f"Summary: Found {len(jobs)} new matches.")
     report.append("")
@@ -30,10 +30,10 @@ def format_report(jobs, zip_path):
     report.append("")
     report.append("MATCH EXPLANATIONS:")
     for idx, job in enumerate(jobs, 1):
-        report.append(f"{idx}. {job['company']} — {job['title']} — {job['fitness_score']}% Fit:")
+        report.append(f"{idx}. {job['company']} - {job['title']} - {job['fitness_score']}% Fit:")
         report.append(f"   Why: {job['fitness_reason']}")
         report.append(f"   Apply Link: {job['link']}")
-        report.append(f"   Resumes: ✅ Generated | Cover Letters: ✅ Generated")
+        report.append(f"   Resumes: [Yes] Generated | Cover Letters: [Yes] Generated")
         report.append("")
         
     report.append(f"MATERIALS BUNDLED IN ZIP: {zip_path}")
