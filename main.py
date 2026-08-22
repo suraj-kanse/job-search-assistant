@@ -46,6 +46,11 @@ def main():
     parser.add_argument("--search", action="store_true", help="Run job search and generate tailored materials")
     parser.add_argument("--status", action="store_true", help="Display summary stats from application tracker")
     parser.add_argument("--update", nargs=2, metavar=("JOB_ID", "STATUS"), help="Update status of a specific job")
+    parser.add_argument("--custom", action="store_true", help="Manually generate documents for a specific job description")
+    parser.add_argument("--company", type=str, help="Company name (for --custom)")
+    parser.add_argument("--role", type=str, help="Job title/role (for --custom)")
+    parser.add_argument("--location", type=str, help="Location (for --custom)")
+    parser.add_argument("--jd", type=str, help="Job description/snippet (for --custom)")
     
     args = parser.parse_args()
     
@@ -83,6 +88,42 @@ def main():
     elif args.update:
         job_id, status = args.update
         update_job_status(job_id, status)
+        
+    elif args.custom:
+        if not (args.company and args.role and args.location and args.jd):
+            print("Error: --custom requires --company, --role, --location, and --jd to be specified.")
+            sys.exit(1)
+            
+        from search_engine import calculate_fitness
+        from profile_manager import load_profile
+        
+        profile = load_profile()
+        # Generate a unique manual ID
+        job_id = f"MAN-{args.company.upper()[:3]}-{str(abs(hash(args.jd)))[:6]}"
+        
+        job = {
+            "title": args.role,
+            "company": args.company,
+            "job_id": job_id,
+            "platform": "Manual",
+            "location": args.location,
+            "posted_date": "Today",
+            "link": "Manual Input",
+            "snippet": args.jd
+        }
+        
+        score, reason = calculate_fitness(job, profile)
+        job["fitness_score"] = score
+        job["fitness_reason"] = reason
+        
+        print(f"Calculating fitness score... Match is: {score}% Fit")
+        print("Generating customized application documents...")
+        zip_path = generate_application_bundle([job], output_dir="dist")
+        
+        print("Updating Excel application tracker...")
+        add_jobs_to_tracker([job])
+        
+        print("\n" + format_report([job], zip_path))
 
 if __name__ == "__main__":
     main()

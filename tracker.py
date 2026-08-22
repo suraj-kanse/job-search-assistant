@@ -13,6 +13,16 @@ HEADERS = [
     "Interview Stage", "Rejection Reason", "Notes", "Follow-up Date", "Next Action"
 ]
 
+def save_workbook_safely(wb, path):
+    """Saves the workbook and handles PermissionError gracefully if file is open in Excel."""
+    try:
+        wb.save(path)
+        return True
+    except PermissionError:
+        print(f"\n[!] ERROR: Permission denied writing to '{path}'.")
+        print("Please close 'job_tracker.xlsx' if it is open in Microsoft Excel or another program, then try again.\n")
+        return False
+
 def init_tracker():
     """Initializes the Excel tracker with header formatting if it does not exist."""
     if os.path.exists(TRACKER_PATH):
@@ -38,7 +48,7 @@ def init_tracker():
         cell.fill = header_fill
         cell.alignment = center_align
         
-    wb.save(TRACKER_PATH)
+    save_workbook_safely(wb, TRACKER_PATH)
     return wb
 
 def load_tracker():
@@ -103,7 +113,7 @@ def add_jobs_to_tracker(jobs):
             max_len = max(max_len, len(val_str))
         ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
         
-    wb.save(TRACKER_PATH)
+    save_workbook_safely(wb, TRACKER_PATH)
     print(f"Added {new_jobs_added} new jobs to tracker.")
     return new_jobs_added
 
@@ -130,7 +140,7 @@ def update_job_status(job_id, new_status, extra_fields=None):
             break
             
     if updated:
-        wb.save(TRACKER_PATH)
+        save_workbook_safely(wb, TRACKER_PATH)
         print(f"Updated job {job_id} to status: {new_status}")
     else:
         print(f"Job ID {job_id} not found in tracker.")
