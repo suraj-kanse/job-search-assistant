@@ -1,0 +1,91 @@
+{
+  "name": "Suraj Kanse",
+  "phone": "+91 8698801090",
+  "email": "surajkanse88@gmail.com",
+  "linkedin": "linkedin.com/in/surajkanse",
+  "github": "github.com/suraj-kanse",
+  "location": {
+    "current": "Sangamner, Maharashtra",
+    "target": "All India"
+  },
+  "education": [
+    {
+      "degree": "Bachelor of Engineering - Information Technology",
+      "college": "Amrutvahini College Of Engineering, Sangamner | SPPU",
+      "duration": "Aug 2023 – Jun 2027",
+      "cgpa": "7.76/10.0"
+    }
+  ],
+  "experience": [
+    {
+      "role": "Full Stack Web Development with AI Tools Intern",
+      "company": "Edunet Foundation | EY",
+      "duration": "Dec 2025 – Jan 2026",
+      "details": [
+        "Developed the Resume Skill Gap Analyzer & HR Screening Platform using Django, Python, and MySQL to automate resume screening and candidate skill analysis.",
+        "Engineered a synonym-aware skill matching engine covering 200+ technical skills across 13 domains and 25+ synonym groups to reduce false-negative matches.",
+        "Integrated PyPDF2 and python-docx for automated PDF/DOCX resume extraction and processing.",
+        "Collaborated using Git/GitHub to develop Built HR analytics workflows with candidate filtering, skill-gap analysis, and PDF reporting."
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Counselling Centre, AVCOE",
+      "duration": "Jan 2026 – Mar 2026",
+      "tech_stack": "React, TypeScript, Node.js, Express.js, MongoDB, Tailwind CSS, Vite, Vercel",
+      "details": [
+        "Developed and deployed a full-stack student counselling platform for AVCOE, supporting student support requests, appointment management, and confidential session records through role-based dashboards.",
+        "Implemented JWT authentication, RBAC, bcrypt, rate limiting, CORS, and Helmet to secure student and counselor workflows.",
+        "Built REST APIs with Express.js and MongoDB, using Mongoose schemas and indexed queries for efficient record retrieval.",
+        "Designed a responsive interface with React, TypeScript, Tailwind CSS, and Framer Motion and deployed the application on Vercel."
+      ],
+      "links": {
+        "live": "https://counselling-centre-avcoe.vercel.app",
+        "github": "Private (Client Project)"
+      }
+    },
+    {
+      "name": "Resume Skill Gap Analyzer & HR Screening Platform",
+      "duration": "Dec 2025 – Jan 2026",
+      "tech_stack": "Django, Python, MySQL, PyPDF2, python-docx, HTML, CSS, JavaScript, Bootstrap",
+      "details": [
+        "Built a recruitment platform that parses PDF/DOCX resumes and matches candidate skills against job requirements.",
+        "Developed Candidate and HR portals supporting resume analysis history, job management, candidate filtering, skill-gap recommendations, and PDF/JSON reporting."
+      ],
+      "links": {
+        "github": "https://github.com/suraj-kanse/Resume-Skill-Gap-Analyzer"
+      }
+    }
+  ],
+  "skills": {
+    "languages": ["Python", "JavaScript", "TypeScript", "C", "C++"],
+    "backend": ["Django", "Node.js", "Express.js", "REST APIs", "Mongoose"],
+    "frontend": ["React.js", "HTML5", "CSS3", "Tailwind CSS", "Framer Motion"],
+    "databases": ["MySQL", "MongoDB"],
+    "security": ["JWT", "bcrypt", "RBAC", "CORS", "Helmet"],
+    "tools": ["Git", "GitHub", "VS Code", "Vite"]
+  },
+  "certifications": [
+    "Full Stack Web Development with AI tools – Edunet Foundation (Feb 2026)",
+    "SQL – Technorbit Infosystems (Feb 2026)",
+    "AI Skills Passport – EY and Microsoft (Jan 2026)",
+    "AWS Cloud Financial Management Virtual Internship – AWS Skill Builder (Dec 2025)",
+    "Python Fullstack Developer Virtual Internship – Eduskills Foundation (Sep 2025)",
+    "AWS Cloud Virtual Internship – Eduskills Foundation (Aug 2024)"
+  ],
+  "languages": {
+    "English": "Fluent",
+    "Japanese": "Beginner (N4 Learner)",
+    "Hindi": "Native",
+    "Marathi": "Native"
+  },
+  "preferences": {
+    "roles": ["Backend Engineer", "Full Stack Engineer", "Frontend Engineer", "Software Developer", "Intern"],
+    "locations": ["Bangalore", "Pune", "Mumbai", "Hyderabad", "Delhi-NCR", "Chennai", "Remote"],
+    "company_types": ["Product-based", "Startup", "MNC", "Service-based"],
+    "seniority": "Fresher / Intern",
+    "ctc_expectations": "Open",
+    "notice_period": "Immediate"
+  }
+}
