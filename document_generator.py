@@ -7,8 +7,85 @@ import zipfile
 import shutil
 from profile_manager import load_profile
 
+def tailor_profile_data(job, profile):
+    """Tailors skills, projects, and experiences dynamically based on the job description/snippet."""
+    import re
+    
+    jd_text = (job["title"] + " " + job.get("snippet", "")).lower()
+    
+    # Deep copy profile data so we don't mutate the original loaded JSON
+    tailored = json.loads(json.dumps(profile))
+    
+    # 1. Re-order Projects by keyword overlap
+    projects = tailored.get("projects", [])
+    if projects:
+        for proj in projects:
+            score = 0
+            proj_text = (proj["name"] + " " + proj["tech_stack"] + " " + " ".join(proj["details"])).lower()
+            for word in re.findall(r'\w+', jd_text):
+                if len(word) > 2 and word in proj_text:
+                    score += 1
+            proj["_score"] = score
+            
+            # Re-order the bullet points inside the project
+            details = proj["details"]
+            def score_bullet(b):
+                b_score = 0
+                for w in re.findall(r'\w+', jd_text):
+                    if len(w) > 2 and w in b.lower():
+                        b_score += 1
+                return b_score
+            proj["details"] = sorted(details, key=score_bullet, reverse=True)
+            
+        tailored["projects"] = sorted(projects, key=lambda p: p["_score"], reverse=True)
+
+    # 2. Re-order Experience bullet points
+    experience = tailored.get("experience", [])
+    if experience:
+        for exp in experience:
+            details = exp["details"]
+            def score_bullet(b):
+                b_score = 0
+                for w in re.findall(r'\w+', jd_text):
+                    if len(w) > 2 and w in b.lower():
+                        b_score += 1
+                return b_score
+            exp["details"] = sorted(details, key=score_bullet, reverse=True)
+
+    # 3. Re-order and highlight skills
+    skills = tailored.get("skills", {})
+    tailored_skills = {}
+    cat_scores = {}
+    
+    for cat, list_skills in skills.items():
+        score = 0
+        skill_scores = []
+        for s in list_skills:
+            s_score = 0
+            if s.lower() in jd_text:
+                s_score = 5
+            elif any(w in s.lower() for w in re.findall(r'\w+', jd_text) if len(w) > 2):
+                s_score = 2
+            skill_scores.append((s, s_score))
+            score += s_score
+            
+        cat_scores[cat] = score
+        tailored_skills[cat] = [item[0] for item in sorted(skill_scores, key=lambda x: x[1], reverse=True)]
+        
+    sorted_cats = sorted(cat_scores.keys(), key=lambda c: cat_scores[c], reverse=True)
+    rebuilt_skills = {}
+    for cat in sorted_cats:
+        rebuilt_skills[cat] = tailored_skills[cat]
+        
+    tailored["skills"] = rebuilt_skills
+    return tailored
+
 def create_resume(job, profile, output_path):
     """Generates a customized, ATS-optimized resume as a docx file."""
+    # Tailor the profile data dynamically for this specific job
+    tailored_profile = tailor_profile_data(job, profile)
+    profile = tailored_profile
+    
     doc = docx.Document()
     
     # Page setup - Standard 1 inch margins
@@ -182,14 +259,27 @@ def create_cover_letter(job, profile, output_path):
         f"and I have been building full-stack web applications with Python, Django, React, and Node.js."
     )
     
-    body = (
-        f"Recently, I built a student counselling platform for my college using React, Node.js, and MongoDB, "
-        f"which handles secure student session logs and support requests using role-based access control. "
-        f"I also completed an internship where I built a Resume Skill Gap Analyzer using Django and Python. "
-        f"Through these projects, I have learned how to write clean API endpoints, design structured SQL/NoSQL databases, "
-        f"and secure applications using JWT and bcrypt. "
-        f"Your team's work at {job['company']} aligns perfectly with my background, and I would love to bring my technical skills to the role."
-    )
+    jd_text = (job["title"] + " " + job.get("snippet", "")).lower()
+    is_python_heavy = "python" in jd_text or "django" in jd_text
+    
+    if is_python_heavy:
+        body = (
+            f"Recently, I built a Resume Skill Gap Analyzer & HR Screening Platform during my internship at Edunet Foundation/EY. "
+            f"I designed and developed synonym-aware matching engines and handled automated resume extraction using Python and Django. "
+            f"I also built a student counselling platform for my college using React, Node.js, and MongoDB, which handles role-based dashboards. "
+            f"Through these projects, I have learned how to write clean backend APIs, manage databases (MySQL and MongoDB), "
+            f"and implement security practices like JWT and bcrypt. "
+            f"Your team's work at {job['company']} aligns perfectly with my background, and I would love to bring my technical skills to the role."
+        )
+    else:
+        body = (
+            f"Recently, I built a student counselling platform for my college using React, Node.js, and MongoDB, "
+            f"which handles secure student session logs and support requests using role-based access control. "
+            f"I also completed an internship where I built a Resume Skill Gap Analyzer using Django and Python. "
+            f"Through these projects, I have learned how to write clean API endpoints, design structured SQL/NoSQL databases, "
+            f"and secure applications using JWT and bcrypt. "
+            f"Your team's work at {job['company']} aligns perfectly with my background, and I would love to bring my technical skills to the role."
+        )
     
     closing = (
         f"Since I am in my final year, I am looking for both immediate internships and graduate roles starting in 2027. "
