@@ -38,40 +38,88 @@ def get_search_queries(profile):
             queries.append(f'site:instahyre.com {skill} {loc}')
     return list(set(queries))[:8] # Limit queries to avoid rate limits
 
+import time
+import random
+
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+]
+
 def search_duckduckgo(query):
-    """Scrapes DuckDuckGo HTML search results for a given query."""
+    """Scrapes DuckDuckGo HTML or Lite search results with anti-blocking features."""
     print(f"Searching: {query}...")
+    
+    # Introduce random delay (jitter) to prevent anti-bot triggers
+    time.sleep(random.uniform(1.5, 3.0))
+    
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1"
     }
+    
+    # Method 1: Try HTML Search Interface
     url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
     try:
-        r = requests.get(url, headers=headers, timeout=10)
-        if r.status_code != 200:
-            print(f"Failed to fetch DuckDuckGo (Status: {r.status_code})")
-            return []
-        soup = BeautifulSoup(r.text, 'html.parser')
-        results = []
+        session = requests.Session()
+        r = session.get(url, headers=headers, timeout=10)
         
-        # In DuckDuckGo HTML, each result is inside a result__body class
-        for body in soup.find_all('div', class_='result__body'):
-            title_a = body.find('a', class_='result__url')
-            snippet_a = body.find('a', class_='result__snippet')
-            
-            if title_a and snippet_a:
-                title = title_a.text.strip()
-                link = title_a['href']
-                snippet = snippet_a.text.strip()
-                results.append({
-                    "title": title,
-                    "link": link,
-                    "snippet": snippet
-                })
-        print(f"Found {len(results)} raw search results.")
-        return results
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, 'html.parser')
+            results = []
+            for body in soup.find_all('div', class_='result__body'):
+                title_a = body.find('a', class_='result__url')
+                snippet_a = body.find('a', class_='result__snippet')
+                if title_a and snippet_a:
+                    results.append({
+                        "title": title_a.text.strip(),
+                        "link": title_a['href'],
+                        "snippet": snippet_a.text.strip()
+                    })
+            if results:
+                print(f"Found {len(results)} raw search results via HTML.")
+                return results
     except Exception as e:
-        print(f"Search error for '{query}': {e}")
-        return []
+        print(f"HTML Search Error: {e}")
+
+    # Method 2: Fallback to Lite Search Interface
+    print("Falling back to DuckDuckGo Lite...")
+    lite_url = "https://lite.duckduckgo.com/lite/"
+    data = {"q": query, "kl": "us-en"}
+    try:
+        # Re-introduce jitter
+        time.sleep(random.uniform(1.0, 2.0))
+        headers["User-Agent"] = random.choice(USER_AGENTS)
+        session = requests.Session()
+        r = session.post(lite_url, headers=headers, data=data, timeout=10)
+        
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, 'html.parser')
+            results = []
+            
+            # DDG Lite uses table rows. Links have class 'result-link' and snippets are adjacent
+            links_tags = soup.find_all('a', class_='result-link')
+            snippets_tags = soup.find_all('td', class_='result-snippet')
+            
+            for a, snippet in zip(links_tags, snippets_tags):
+                results.append({
+                    "title": a.text.strip(),
+                    "link": a['href'],
+                    "snippet": snippet.text.strip()
+                })
+            if results:
+                print(f"Found {len(results)} raw search results via Lite.")
+                return results
+        print(f"Failed to fetch DuckDuckGo Lite (Status: {r.status_code})")
+    except Exception as e:
+        print(f"Lite Search Error: {e}")
+        
+    return []
 
 def parse_job_platform(url):
     """Identifies the job platform from URL."""
