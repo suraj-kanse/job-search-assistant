@@ -64,7 +64,7 @@ def search_duckduckgo(query):
     }
     
     # Method 1: Try HTML Search Interface
-    url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
+    url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}&df=d"
     try:
         session = requests.Session()
         r = session.get(url, headers=headers, timeout=10)
@@ -90,7 +90,7 @@ def search_duckduckgo(query):
     # Method 2: Fallback to Lite Search Interface
     print("Falling back to DuckDuckGo Lite...")
     lite_url = "https://lite.duckduckgo.com/lite/"
-    data = {"q": query, "kl": "us-en"}
+    data = {"q": query, "kl": "us-en", "df": "d"}
     try:
         # Re-introduce jitter
         time.sleep(random.uniform(1.0, 2.0))
@@ -328,6 +328,8 @@ def run_job_search():
 
     # Sort by fitness score descending
     sorted_jobs = sorted(unique_jobs.values(), key=lambda x: x["fitness_score"], reverse=True)
+    # Strict filter: Only keep jobs with >= 75% fitness score (high relevance)
+    sorted_jobs = [j for j in sorted_jobs if j["fitness_score"] >= 75]
     return sorted_jobs
 
 if __name__ == "__main__":
