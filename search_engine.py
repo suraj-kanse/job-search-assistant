@@ -22,21 +22,19 @@ PLATFORMS = {
 }
 
 def get_search_queries(profile):
-    """Generates search queries based on profile preferences."""
+    """Generates targeted search queries prioritizing active platforms and direct ATS portals."""
     prefs = profile.get("preferences", {})
-    roles = prefs.get("roles", ["Backend Engineer"])
-    locations = prefs.get("locations", ["Bangalore"])
-    skills = profile.get("skills", {}).get("languages", ["Python"]) + profile.get("skills", {}).get("backend", ["Node.js"])
+    locations = prefs.get("locations", ["Bangalore", "Pune", "Mumbai"])
+    skills = profile.get("skills", {}).get("languages", ["Python", "JavaScript", "TypeScript"]) + profile.get("skills", {}).get("backend", ["Node.js", "Django"])
     
     queries = []
-    # Build a few targeted search queries
-    # Make them broader to ensure we get results
     for skill in skills[:3]:
         for loc in locations[:3]:
-            queries.append(f'site:naukri.com {skill} fresher {loc}')
-            queries.append(f'site:linkedin.com/jobs {skill} {loc} fresher')
-            queries.append(f'site:instahyre.com {skill} {loc}')
-    return list(set(queries))[:8] # Limit queries to avoid rate limits
+            queries.append(f'site:linkedin.com/jobs "{skill}" fresher {loc}')
+            queries.append(f'site:linkedin.com/jobs "{skill}" entry level {loc}')
+            queries.append(f'(site:boards.greenhouse.io OR site:jobs.lever.co) "{skill}" ({loc} OR India)')
+            queries.append(f'site:naukri.com "{skill}" fresher {loc}')
+    return list(set(queries))[:8]
 
 import time
 import random
