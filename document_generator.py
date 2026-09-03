@@ -81,136 +81,160 @@ def tailor_profile_data(job, profile):
     return tailored
 
 def create_resume(job, profile, output_path):
-    """Generates a customized, ATS-optimized resume as a docx file."""
-    # Tailor the profile data dynamically for this specific job
-    tailored_profile = tailor_profile_data(job, profile)
-    profile = tailored_profile
-    
+    """Generates an ATS-compliant resume preserving the exact base layout, sections, and styling."""
     doc = docx.Document()
     
-    # Page setup - Standard 1 inch margins
-    sections = doc.sections
-    for section in sections:
-        section.top_margin = Inches(1)
-        section.bottom_margin = Inches(1)
-        section.left_margin = Inches(1)
-        section.right_margin = Inches(1)
+    # Page setup - Standard 0.75-1.0 inch clean margins
+    for section in doc.sections:
+        section.top_margin = Inches(0.75)
+        section.bottom_margin = Inches(0.75)
+        section.left_margin = Inches(0.8)
+        section.right_margin = Inches(0.8)
 
     # Base styling
     style = doc.styles['Normal']
     font = style.font
     font.name = 'Calibri'
-    font.size = Pt(11)
+    font.size = Pt(10.5)
 
-    # 1. Header (Centered Name & Contact)
+    # 1. Header (Centered Name & Contact with clean text separators)
     title_p = doc.add_paragraph()
     title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title_p.paragraph_format.space_after = Pt(2)
     run = title_p.add_run(profile["name"].upper())
     run.bold = True
-    run.font.size = Pt(22)
+    run.font.size = Pt(20)
     
     contact_p = doc.add_paragraph()
     contact_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    contact_info = f"{profile['phone']}  |  {profile['email']}  |  {profile['location']['current']}\nLinkedIn: {profile['linkedin']}  |  GitHub: {profile['github']}"
+    contact_p.paragraph_format.space_after = Pt(8)
+    contact_info = f"{profile['phone']}  •  {profile['email']}  •  {profile['location']['current']}\nLinkedIn: {profile['linkedin']}  •  GitHub: {profile['github']}"
     run = contact_p.add_run(contact_info)
-    run.font.size = Pt(10)
+    run.font.size = Pt(9.5)
 
-    # Helper function for section headings
+    # Helper function for standardized section headings
     def add_section_heading(text):
         p = doc.add_paragraph()
-        p.paragraph_format.space_before = Pt(12)
-        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.space_before = Pt(10)
+        p.paragraph_format.space_after = Pt(3)
         run = p.add_run(text)
         run.bold = True
-        run.font.size = Pt(13)
-        # Add bottom border/line if possible (using paragraph border is complex, so we will use bold headings and clean spacing)
+        run.font.size = Pt(12)
         
-    # 2. Professional Summary (Tailored to Job)
+    # 2. Professional Summary (Maintains base phrasing with natural keyword alignment)
     add_section_heading("Professional Summary")
     summary_p = doc.add_paragraph()
-    
-    # Custom summary using non-AI-cliché human tone
-    role_type = job["title"]
-    company = job["company"]
+    summary_p.paragraph_format.space_after = Pt(4)
     summary_text = (
-        f"Information Technology undergraduate with hands-on experience building web applications "
-        f"using Python, Django, React, and Node.js. Developed and deployed full-stack solutions "
-        f"featuring REST APIs, secure user authentication, and automated data processing tools. "
-        f"Eager to contribute technical skills and build reliable software as a {role_type} at {company}."
+        "Information Technology undergraduate with hands-on experience building full-stack and "
+        "backend applications using Python, Django, JavaScript, React, Node.js, and SQL/NoSQL databases. "
+        "Developed and deployed web applications featuring REST APIs, authentication, role-based access control, "
+        "database integration, and automated data/resume processing through internship and academic projects."
     )
     summary_p.add_run(summary_text)
 
-    # 3. Technical Skills
+    # 3. Technical Skills (Exact base category sequence)
     add_section_heading("Technical Skills")
-    skills = profile["skills"]
-    for cat, list_skills in skills.items():
-        p = doc.add_paragraph()
-        p.paragraph_format.left_indent = Inches(0.2)
-        p.paragraph_format.space_after = Pt(2)
-        run_cat = p.add_run(f"{cat.capitalize()}: ")
-        run_cat.bold = True
-        p.add_run(", ".join(list_skills))
+    skills = profile.get("skills", {})
+    categories = [
+        ("Languages", skills.get("languages", [])),
+        ("Backend", skills.get("backend", [])),
+        ("Frontend", skills.get("frontend", [])),
+        ("Databases", skills.get("databases", [])),
+        ("Security", skills.get("security", [])),
+        ("Tools", skills.get("tools", []))
+    ]
+    for cat_name, list_skills in categories:
+        if list_skills:
+            p = doc.add_paragraph()
+            p.paragraph_format.left_indent = Inches(0.15)
+            p.paragraph_format.space_after = Pt(1.5)
+            run_cat = p.add_run(f"{cat_name}: ")
+            run_cat.bold = True
+            p.add_run(", ".join(list_skills))
 
-    # 4. Experience
-    add_section_heading("Experience")
-    for exp in profile["experience"]:
+    # 4. Internship Experience (Exact base layout)
+    add_section_heading("Internship Experience")
+    for exp in profile.get("experience", []):
         p_title = doc.add_paragraph()
-        p_title.paragraph_format.space_after = Pt(2)
-        run_role = p_title.add_run(f"{exp['role']}  —  {exp['company']}")
+        p_title.paragraph_format.space_before = Pt(4)
+        p_title.paragraph_format.space_after = Pt(1)
+        run_role = p_title.add_run(f"{exp['role']}")
         run_role.bold = True
         
-        p_dates = doc.add_paragraph()
-        p_dates.paragraph_format.space_after = Pt(4)
-        run_dates = p_dates.add_run(exp["duration"])
-        run_dates.font.italic = True
+        # Duration on right or subtitle
+        p_company = doc.add_paragraph()
+        p_company.paragraph_format.space_after = Pt(3)
+        run_comp = p_company.add_run(f"{exp['company']}  |  {exp['duration']}")
+        run_comp.font.italic = True
         
-        # Customize bullet points based on JD if needed
-        for detail in exp["details"]:
+        for detail in exp.get("details", []):
             p_bullet = doc.add_paragraph(style='List Bullet')
-            p_bullet.paragraph_format.space_after = Pt(2)
-            p_bullet.paragraph_format.left_indent = Inches(0.4)
+            p_bullet.paragraph_format.space_after = Pt(1.5)
+            p_bullet.paragraph_format.left_indent = Inches(0.3)
             p_bullet.add_run(detail)
 
-    # 5. Projects
+    # 5. Projects (Exact base sequence and links)
     add_section_heading("Projects")
-    for proj in profile["projects"]:
+    for proj in profile.get("projects", []):
         p_proj = doc.add_paragraph()
-        p_proj.paragraph_format.space_after = Pt(2)
+        p_proj.paragraph_format.space_before = Pt(4)
+        p_proj.paragraph_format.space_after = Pt(1)
         run_proj = p_proj.add_run(f"{proj['name']}  ({proj['duration']})")
         run_proj.bold = True
         
         p_tech = doc.add_paragraph()
-        p_tech.paragraph_format.space_after = Pt(4)
-        p_tech.paragraph_format.left_indent = Inches(0.2)
+        p_tech.paragraph_format.space_after = Pt(2)
+        p_tech.paragraph_format.left_indent = Inches(0.15)
         run_tech = p_tech.add_run("Tech Stack: ")
         run_tech.bold = True
         p_tech.add_run(proj["tech_stack"])
         
-        for detail in proj["details"]:
+        for detail in proj.get("details", []):
             p_bullet = doc.add_paragraph(style='List Bullet')
-            p_bullet.paragraph_format.space_after = Pt(2)
-            p_bullet.paragraph_format.left_indent = Inches(0.4)
+            p_bullet.paragraph_format.space_after = Pt(1.5)
+            p_bullet.paragraph_format.left_indent = Inches(0.3)
             p_bullet.add_run(detail)
+            
+        # Include links if present
+        links = proj.get("links", {})
+        if links:
+            p_link = doc.add_paragraph()
+            p_link.paragraph_format.space_after = Pt(3)
+            p_link.paragraph_format.left_indent = Inches(0.3)
+            link_strs = [f"{k.capitalize()}: {v}" for k, v in links.items()]
+            p_link.add_run("  •  ".join(link_strs)).font.size = Pt(9.5)
 
-    # 6. Education
+    # 6. Education (Exact base layout)
     add_section_heading("Education")
-    for edu in profile["education"]:
+    for edu in profile.get("education", []):
         p_edu = doc.add_paragraph()
-        p_edu.paragraph_format.space_after = Pt(2)
-        run_deg = p_edu.add_run(f"{edu['degree']}  —  {edu['college']}")
+        p_edu.paragraph_format.space_after = Pt(1)
+        run_deg = p_edu.add_run(f"{edu['degree']}")
         run_deg.bold = True
         
         p_details = doc.add_paragraph()
-        p_details.paragraph_format.left_indent = Inches(0.2)
-        p_details.add_run(f"Duration: {edu['duration']}  |  CGPA: {edu['cgpa']}")
+        p_details.paragraph_format.space_after = Pt(3)
+        p_details.paragraph_format.left_indent = Inches(0.15)
+        p_details.add_run(f"{edu['college']}  |  {edu['duration']}  |  CGPA: {edu['cgpa']}")
 
     # 7. Certifications
     add_section_heading("Certifications")
-    for cert in profile["certifications"]:
+    for cert in profile.get("certifications", []):
         p_cert = doc.add_paragraph(style='List Bullet')
-        p_cert.paragraph_format.space_after = Pt(2)
-        p_cert.paragraph_format.left_indent = Inches(0.4)
+        p_cert.paragraph_format.space_after = Pt(1.5)
+        p_cert.paragraph_format.left_indent = Inches(0.3)
         p_cert.add_run(cert)
+
+    # 8. Languages
+    languages = profile.get("languages", {})
+    if languages:
+        add_section_heading("Languages")
+        p_lang = doc.add_paragraph()
+        p_lang.paragraph_format.left_indent = Inches(0.15)
+        p_lang.paragraph_format.space_after = Pt(4)
+        lang_items = [f"{lang} ({lvl})" for lang, lvl in languages.items()]
+        p_lang.add_run("  •  ".join(lang_items))
 
     # Save
     doc.save(output_path)
