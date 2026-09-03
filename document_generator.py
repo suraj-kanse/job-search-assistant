@@ -241,83 +241,108 @@ def create_resume(job, profile, output_path):
 
 
 def create_cover_letter(job, profile, output_path):
-    """Generates a customized, human-sounding cover letter as a docx file."""
+    """Generates a customized cover letter preserving the exact base template and layout."""
     doc = docx.Document()
     
-    # Page setup
+    # Page setup - Standard 0.8 inch clean margins
     for section in doc.sections:
-        section.top_margin = Inches(1)
-        section.bottom_margin = Inches(1)
-        section.left_margin = Inches(1)
-        section.right_margin = Inches(1)
+        section.top_margin = Inches(0.8)
+        section.bottom_margin = Inches(0.8)
+        section.left_margin = Inches(0.85)
+        section.right_margin = Inches(0.85)
         
     style = doc.styles['Normal']
     font = style.font
     font.name = 'Calibri'
-    font.size = Pt(11)
+    font.size = Pt(10.5)
 
-    # Date
-    import datetime
-    today = datetime.date.today().strftime("%B %d, %Y")
-    doc.add_paragraph(today)
-    
-    # Applicant details
-    p_applicant = doc.add_paragraph()
-    p_applicant.paragraph_format.space_after = Pt(12)
-    p_applicant.add_run(f"{profile['name']}\n{profile['location']['current']}\n{profile['email']} | {profile['phone']}")
-    
-    # Recipient details
-    p_recipient = doc.add_paragraph()
-    p_recipient.paragraph_format.space_after = Pt(12)
-    p_recipient.add_run(f"Hiring Team\n{job['company']}\n{job['location']}")
-    
+    # 1. Header (Left-aligned as in user's base template)
+    title_p = doc.add_paragraph()
+    title_p.paragraph_format.space_after = Pt(2)
+    run_name = title_p.add_run(profile["name"].upper())
+    run_name.bold = True
+    run_name.font.size = Pt(22)
+
+    sub_p = doc.add_paragraph()
+    sub_p.paragraph_format.space_after = Pt(4)
+    run_sub = sub_p.add_run("Full-Stack / Web Developer / Cloud Computing / AIML Intern")
+    run_sub.bold = True
+    run_sub.font.size = Pt(11)
+    from docx.shared import RGBColor
+    run_sub.font.color.rgb = RGBColor(29, 99, 184) # Modern Blue accent
+
+    contact_p1 = doc.add_paragraph()
+    contact_p1.paragraph_format.space_after = Pt(1)
+    run_c1 = contact_p1.add_run(f"{profile['phone']}  |  {profile['location']['current']}, India")
+    run_c1.font.size = Pt(9.5)
+
+    contact_p2 = doc.add_paragraph()
+    contact_p2.paragraph_format.space_after = Pt(14)
+    run_c2 = contact_p2.add_run(f"{profile['email']}  |  https://{profile['linkedin']}  |  https://{profile['github']}")
+    run_c2.font.size = Pt(9.5)
+    run_c2.font.color.rgb = RGBColor(29, 99, 184)
+
+    # Section Title: COVER LETTER with divider
+    cl_heading = doc.add_paragraph()
+    cl_heading.paragraph_format.space_before = Pt(6)
+    cl_heading.paragraph_format.space_after = Pt(8)
+    run_cl = cl_heading.add_run("COVER LETTER")
+    run_cl.bold = True
+    run_cl.font.size = Pt(13)
+
     # Salutation
     p_salutation = doc.add_paragraph()
-    p_salutation.paragraph_format.space_after = Pt(12)
-    p_salutation.add_run("Dear Hiring Team,")
+    p_salutation.paragraph_format.space_after = Pt(10)
+    p_salutation.add_run("Dear Hiring Manager,")
     
-    # Custom, non-AI-speak body paragraphs under 300 words
-    opening = (
-        f"I saw your opening for a {job['title']} and wanted to reach out. "
-        f"I am a final-year Information Technology student at Amrutvahini College of Engineering, "
-        f"and I have been building full-stack web applications with Python, Django, React, and Node.js."
-    )
-    
+    # Target tech stack derivation from JD
     jd_text = (job["title"] + " " + job.get("snippet", "")).lower()
-    is_python_heavy = "python" in jd_text or "django" in jd_text
-    
-    if is_python_heavy:
-        body = (
-            f"Recently, I built a Resume Skill Gap Analyzer & HR Screening Platform during my internship at Edunet Foundation/EY. "
-            f"I designed and developed synonym-aware matching engines and handled automated resume extraction using Python and Django. "
-            f"I also built a student counselling platform for my college using React, Node.js, and MongoDB, which handles role-based dashboards. "
-            f"Through these projects, I have learned how to write clean backend APIs, manage databases (MySQL and MongoDB), "
-            f"and implement security practices like JWT and bcrypt. "
-            f"Your team's work at {job['company']} aligns perfectly with my background, and I would love to bring my technical skills to the role."
-        )
-    else:
-        body = (
-            f"Recently, I built a student counselling platform for my college using React, Node.js, and MongoDB, "
-            f"which handles secure student session logs and support requests using role-based access control. "
-            f"I also completed an internship where I built a Resume Skill Gap Analyzer using Django and Python. "
-            f"Through these projects, I have learned how to write clean API endpoints, design structured SQL/NoSQL databases, "
-            f"and secure applications using JWT and bcrypt. "
-            f"Your team's work at {job['company']} aligns perfectly with my background, and I would love to bring my technical skills to the role."
-        )
-    
-    closing = (
-        f"Since I am in my final year, I am looking for both immediate internships and graduate roles starting in 2027. "
-        f"I am ready to relocate to {job['location']} and am available to start immediately. "
-        f"Thank you for your time and consideration. I hope we can discuss how my experience fits this role."
+    tech_phrase = "React and TypeScript"
+    if "python" in jd_text or "django" in jd_text:
+        tech_phrase = "Python, Django, and modern web frameworks"
+    elif "node" in jd_text or "express" in jd_text:
+        tech_phrase = "React, Node.js, and TypeScript"
+
+    # Paragraph 1
+    p1 = (
+        f"I’m interested in applying for the {job['title']} at {job['company']}. "
+        f"I’m especially drawn to the strong focus your team places on engineering fundamentals. "
+        f"As an IT undergraduate, I’ve had the chance to build production-level, user-facing web applications using "
+        f"{tech_phrase}. I’m now looking for an Opportunity where I can continue learning while also contributing in a meaningful way "
+        f"to your Team or Company."
     )
     
-    doc.add_paragraph(opening).paragraph_format.space_after = Pt(10)
-    doc.add_paragraph(body).paragraph_format.space_after = Pt(10)
-    doc.add_paragraph(closing).paragraph_format.space_after = Pt(18)
+    # Paragraph 2 (Project Spotlight)
+    p2 = (
+        "In my recent project, I’ve worked on a full-stack Web platform- ‘Counselling Centre, AVCOE’ in which I built a responsive front end "
+        "using React and TypeScript. The goal was to make it easier for Students to access Support. I developed role-based dashboards for "
+        "Students, Counsellor and Admin, handled state management, and worked with real-time data to make things smoother for both "
+        "Students and Administrators. One feature I’m particularly proud of is a QR-based access system, which made it quicker for Students to "
+        "get Help. I also added Reporting tools that simplified record-Handling process. Overall, this project helped me get better at building "
+        "beautiful Interfaces, Managing States, and working closely with Back-end systems."
+    )
+    
+    # Paragraph 3 (Culture, Growth & Japanese)
+    p3 = (
+        f"Beyond technical skills, I am highly motivated by {job['company']}’s culture of continuous growth and industrial exposure. Furthermore, I am "
+        "currently learning Japanese (N5 level), which reflects my strong interest in cross-cultural communication and my long-term goal of "
+        "building a career as an engineer in a global setting."
+    )
+    
+    # Paragraph 4 (Closing)
+    p4 = (
+        "I’d welcome the opportunity to connect and contribute to your Team’s or Company’s goals. I appreciate you considering my "
+        "application and hope to contribute and learn from your organization soon."
+    )
+    
+    doc.add_paragraph(p1).paragraph_format.space_after = Pt(10)
+    doc.add_paragraph(p2).paragraph_format.space_after = Pt(10)
+    doc.add_paragraph(p3).paragraph_format.space_after = Pt(10)
+    doc.add_paragraph(p4).paragraph_format.space_after = Pt(14)
     
     # Sign off
     p_signoff = doc.add_paragraph()
-    p_signoff.add_run(f"Sincerely,\n\n{profile['name']}")
+    p_signoff.add_run(f"Regards,\n{profile['name']}\n{profile['phone']}\n{profile['email']}")
     
     doc.save(output_path)
 
