@@ -99,53 +99,90 @@ def select_relevant_items(items, jd_text, min_k=2, max_k=4):
     ranked = [item for item, s in sorted(scored, key=lambda x: x[1], reverse=True)]
     return ranked[:max(min_k, min(max_k, len(ranked)))]
 
+import docx
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+
+def add_hyperlink(paragraph, url, text, color="1D63B8", underline=False):
+    """Adds a native clickable hyperlink to a docx paragraph that works in Word and PDF exports."""
+    part = paragraph.part
+    r_id = part.relate_to(url, docx.opc.constants.RELATIONSHIP_TYPE.HYPERLINK, is_external=True)
+
+    hyperlink = OxmlElement('w:hyperlink')
+    hyperlink.set(qn('r:id'), r_id)
+
+    new_run = OxmlElement('w:r')
+    rPr = OxmlElement('w:rPr')
+
+    if color:
+        c = OxmlElement('w:color')
+        c.set(qn('w:val'), color)
+        rPr.append(c)
+
+    if underline:
+        u = OxmlElement('w:u')
+        u.set(qn('w:val'), 'single')
+        rPr.append(u)
+
+    new_run.append(rPr)
+    new_run.text = text
+    hyperlink.append(new_run)
+    paragraph._p.append(hyperlink)
+    return hyperlink
+
 def create_resume(job, profile, output_path):
-    """Generates an ATS-compliant resume calibrated for a strict 1-page format."""
+    """Generates an ATS-compliant resume calibrated strictly for 1-page PDF export with clickable links."""
     doc = docx.Document()
     jd_text = (job["title"] + " " + job.get("snippet", "")).lower()
     
-    # Page setup - 0.55 inch compact margins for 1-page density
+    # Page setup - 0.48 inch compact margins to guarantee strict 1-page PDF export
     for section in doc.sections:
-        section.top_margin = Inches(0.55)
-        section.bottom_margin = Inches(0.55)
-        section.left_margin = Inches(0.6)
-        section.right_margin = Inches(0.6)
+        section.top_margin = Inches(0.48)
+        section.bottom_margin = Inches(0.48)
+        section.left_margin = Inches(0.55)
+        section.right_margin = Inches(0.55)
 
     # Base styling
     style = doc.styles['Normal']
     font = style.font
     font.name = 'Calibri'
-    font.size = Pt(9.5)
+    font.size = Pt(9.2)
 
-    # 1. Header (Centered Name & Contact with clean text separators)
+    # 1. Header (Centered Name & Contact with clickable links)
     title_p = doc.add_paragraph()
     title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     title_p.paragraph_format.space_before = Pt(0)
     title_p.paragraph_format.space_after = Pt(1)
     run = title_p.add_run(profile["name"].upper())
     run.bold = True
-    run.font.size = Pt(18)
+    run.font.size = Pt(17)
     
     contact_p = doc.add_paragraph()
     contact_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    contact_p.paragraph_format.space_after = Pt(6)
-    contact_info = f"{profile['phone']} - {profile['email']} - {profile['location']['current']}\nLinkedIn: {profile['linkedin']} - GitHub: {profile['github']}"
-    run = contact_p.add_run(contact_info)
-    run.font.size = Pt(9)
+    contact_p.paragraph_format.space_before = Pt(0)
+    contact_p.paragraph_format.space_after = Pt(4)
+    
+    contact_p.add_run(f"{profile['phone']} - ")
+    add_hyperlink(contact_p, f"mailto:{profile['email']}", profile['email'])
+    contact_p.add_run(f" - {profile['location']['current']}\nLinkedIn: ")
+    add_hyperlink(contact_p, f"https://{profile['linkedin']}", profile['linkedin'])
+    contact_p.add_run(" - GitHub: ")
+    add_hyperlink(contact_p, f"https://{profile['github']}", profile['github'])
 
     # Helper function for standardized section headings
     def add_section_heading(text):
         p = doc.add_paragraph()
-        p.paragraph_format.space_before = Pt(6)
-        p.paragraph_format.space_after = Pt(2)
+        p.paragraph_format.space_before = Pt(4.5)
+        p.paragraph_format.space_after = Pt(1)
         run = p.add_run(text)
         run.bold = True
-        run.font.size = Pt(11)
+        run.font.size = Pt(10.5)
         
     # 2. Professional Summary
     add_section_heading("Professional Summary")
     summary_p = doc.add_paragraph()
-    summary_p.paragraph_format.space_after = Pt(3)
+    summary_p.paragraph_format.space_before = Pt(0)
+    summary_p.paragraph_format.space_after = Pt(2)
     summary_text = (
         "Information Technology undergraduate with hands-on experience building full-stack and "
         "backend applications using Python, Django, JavaScript, React, Node.js, and SQL/NoSQL databases. "
@@ -169,7 +206,8 @@ def create_resume(job, profile, output_path):
         if list_skills:
             p = doc.add_paragraph()
             p.paragraph_format.left_indent = Inches(0.1)
-            p.paragraph_format.space_after = Pt(1)
+            p.paragraph_format.space_before = Pt(0)
+            p.paragraph_format.space_after = Pt(0.5)
             run_cat = p.add_run(f"{cat_name}: ")
             run_cat.bold = True
             p.add_run(", ".join(list_skills))
@@ -178,37 +216,58 @@ def create_resume(job, profile, output_path):
     add_section_heading("Internship Experience")
     for exp in profile.get("experience", []):
         p_title = doc.add_paragraph()
-        p_title.paragraph_format.space_before = Pt(2)
-        p_title.paragraph_format.space_after = Pt(1)
+        p_title.paragraph_format.space_before = Pt(1.5)
+        p_title.paragraph_format.space_after = Pt(0.5)
         run_role = p_title.add_run(f"{exp['role']} - {exp['company']} ({exp['duration']})")
         run_role.bold = True
         
         for detail in exp.get("details", []):
             p_bullet = doc.add_paragraph(style='List Bullet')
-            p_bullet.paragraph_format.space_after = Pt(1)
-            p_bullet.paragraph_format.left_indent = Inches(0.25)
+            p_bullet.paragraph_format.space_before = Pt(0)
+            p_bullet.paragraph_format.space_after = Pt(0.5)
+            p_bullet.paragraph_format.left_indent = Inches(0.2)
             p_bullet.add_run(detail)
 
     # 5. Projects
     add_section_heading("Projects")
     for proj in profile.get("projects", []):
         p_proj = doc.add_paragraph()
-        p_proj.paragraph_format.space_before = Pt(3)
-        p_proj.paragraph_format.space_after = Pt(1)
+        p_proj.paragraph_format.space_before = Pt(2)
+        p_proj.paragraph_format.space_after = Pt(0.5)
         run_proj = p_proj.add_run(f"{proj['name']} ({proj['duration']}) - Tech Stack: {proj['tech_stack']}")
         run_proj.bold = True
         
         for detail in proj.get("details", []):
             p_bullet = doc.add_paragraph(style='List Bullet')
-            p_bullet.paragraph_format.space_after = Pt(1)
-            p_bullet.paragraph_format.left_indent = Inches(0.25)
+            p_bullet.paragraph_format.space_before = Pt(0)
+            p_bullet.paragraph_format.space_after = Pt(0.5)
+            p_bullet.paragraph_format.left_indent = Inches(0.2)
             p_bullet.add_run(detail)
+
+        # Include clickable project links if present
+        links = proj.get("links", {})
+        if links:
+            p_link = doc.add_paragraph()
+            p_link.paragraph_format.space_before = Pt(0)
+            p_link.paragraph_format.space_after = Pt(1)
+            p_link.paragraph_format.left_indent = Inches(0.2)
+            first = True
+            for k, v in links.items():
+                if not first:
+                    p_link.add_run("  -  ")
+                p_link.add_run(f"{k.capitalize()}: ")
+                if v.startswith("http"):
+                    add_hyperlink(p_link, v, v, color="1D63B8", underline=True)
+                else:
+                    p_link.add_run(v)
+                first = False
 
     # 6. Education
     add_section_heading("Education")
     for edu in profile.get("education", []):
         p_edu = doc.add_paragraph()
-        p_edu.paragraph_format.space_after = Pt(2)
+        p_edu.paragraph_format.space_before = Pt(0)
+        p_edu.paragraph_format.space_after = Pt(1.5)
         run_deg = p_edu.add_run(f"{edu['degree']} - {edu['college']} | {edu['duration']} | CGPA: {edu['cgpa']}")
         run_deg.bold = True
 
@@ -219,17 +278,19 @@ def create_resume(job, profile, output_path):
         add_section_heading("Certifications")
         p_cert = doc.add_paragraph()
         p_cert.paragraph_format.left_indent = Inches(0.1)
-        p_cert.paragraph_format.space_after = Pt(2)
+        p_cert.paragraph_format.space_before = Pt(0)
+        p_cert.paragraph_format.space_after = Pt(1.5)
         p_cert.add_run(" - ".join(selected_certs))
 
-    # 8. Achievements (Smart selection of top 2-4 relevant)
+    # 8. Achievements (Smart selection of top 2-3 relevant)
     achievements = profile.get("achievements", [])
     if achievements:
         selected_achievements = select_relevant_items(achievements, jd_text, min_k=2, max_k=3)
         add_section_heading("Achievements & Leadership")
         p_ach = doc.add_paragraph()
         p_ach.paragraph_format.left_indent = Inches(0.1)
-        p_ach.paragraph_format.space_after = Pt(2)
+        p_ach.paragraph_format.space_before = Pt(0)
+        p_ach.paragraph_format.space_after = Pt(1.5)
         p_ach.add_run(" - ".join(selected_achievements))
 
     # 9. Languages
@@ -238,7 +299,8 @@ def create_resume(job, profile, output_path):
         add_section_heading("Languages")
         p_lang = doc.add_paragraph()
         p_lang.paragraph_format.left_indent = Inches(0.1)
-        p_lang.paragraph_format.space_after = Pt(2)
+        p_lang.paragraph_format.space_before = Pt(0)
+        p_lang.paragraph_format.space_after = Pt(1)
         lang_items = [f"{lang} ({lvl})" for lang, lvl in languages.items()]
         p_lang.add_run(" - ".join(lang_items))
 
@@ -247,35 +309,35 @@ def create_resume(job, profile, output_path):
 
 
 def create_cover_letter(job, profile, output_path):
-    """Generates a customized cover letter preserving the exact base template and layout."""
+    """Generates a customized cover letter preserving the exact base template, layout, and clickable links."""
     doc = docx.Document()
     
-    # Page setup - Standard 0.8 inch clean margins
+    # Page setup - Standard 0.75 inch clean margins
     for section in doc.sections:
-        section.top_margin = Inches(0.8)
-        section.bottom_margin = Inches(0.8)
-        section.left_margin = Inches(0.85)
-        section.right_margin = Inches(0.85)
+        section.top_margin = Inches(0.75)
+        section.bottom_margin = Inches(0.75)
+        section.left_margin = Inches(0.8)
+        section.right_margin = Inches(0.8)
         
     style = doc.styles['Normal']
     font = style.font
     font.name = 'Calibri'
-    font.size = Pt(10.5)
+    font.size = Pt(10)
 
     # 1. Header (Left-aligned as in user's base template)
     title_p = doc.add_paragraph()
     title_p.paragraph_format.space_after = Pt(2)
     run_name = title_p.add_run(profile["name"].upper())
     run_name.bold = True
-    run_name.font.size = Pt(22)
+    run_name.font.size = Pt(20)
 
     sub_p = doc.add_paragraph()
-    sub_p.paragraph_format.space_after = Pt(4)
+    sub_p.paragraph_format.space_after = Pt(3)
     run_sub = sub_p.add_run("Full-Stack / Web Developer / Cloud Computing / AIML Intern")
     run_sub.bold = True
-    run_sub.font.size = Pt(11)
+    run_sub.font.size = Pt(10.5)
     from docx.shared import RGBColor
-    run_sub.font.color.rgb = RGBColor(29, 99, 184) # Modern Blue accent
+    run_sub.font.color.rgb = RGBColor(29, 99, 184)
 
     contact_p1 = doc.add_paragraph()
     contact_p1.paragraph_format.space_after = Pt(1)
@@ -283,22 +345,24 @@ def create_cover_letter(job, profile, output_path):
     run_c1.font.size = Pt(9.5)
 
     contact_p2 = doc.add_paragraph()
-    contact_p2.paragraph_format.space_after = Pt(14)
-    run_c2 = contact_p2.add_run(f"{profile['email']}  |  https://{profile['linkedin']}  |  https://{profile['github']}")
-    run_c2.font.size = Pt(9.5)
-    run_c2.font.color.rgb = RGBColor(29, 99, 184)
+    contact_p2.paragraph_format.space_after = Pt(10)
+    add_hyperlink(contact_p2, f"mailto:{profile['email']}", profile['email'])
+    contact_p2.add_run("  |  ")
+    add_hyperlink(contact_p2, f"https://{profile['linkedin']}", f"https://{profile['linkedin']}")
+    contact_p2.add_run("  |  ")
+    add_hyperlink(contact_p2, f"https://{profile['github']}", f"https://{profile['github']}")
 
-    # Section Title: COVER LETTER with divider
+    # Section Title: COVER LETTER
     cl_heading = doc.add_paragraph()
-    cl_heading.paragraph_format.space_before = Pt(6)
-    cl_heading.paragraph_format.space_after = Pt(8)
+    cl_heading.paragraph_format.space_before = Pt(4)
+    cl_heading.paragraph_format.space_after = Pt(6)
     run_cl = cl_heading.add_run("COVER LETTER")
     run_cl.bold = True
-    run_cl.font.size = Pt(13)
+    run_cl.font.size = Pt(12)
 
     # Salutation
     p_salutation = doc.add_paragraph()
-    p_salutation.paragraph_format.space_after = Pt(10)
+    p_salutation.paragraph_format.space_after = Pt(8)
     p_salutation.add_run("Dear Hiring Manager,")
     
     # Target tech stack derivation from JD
@@ -341,10 +405,10 @@ def create_cover_letter(job, profile, output_path):
         "application and hope to contribute and learn from your organization soon."
     )
     
-    doc.add_paragraph(p1).paragraph_format.space_after = Pt(10)
-    doc.add_paragraph(p2).paragraph_format.space_after = Pt(10)
-    doc.add_paragraph(p3).paragraph_format.space_after = Pt(10)
-    doc.add_paragraph(p4).paragraph_format.space_after = Pt(14)
+    doc.add_paragraph(p1).paragraph_format.space_after = Pt(8)
+    doc.add_paragraph(p2).paragraph_format.space_after = Pt(8)
+    doc.add_paragraph(p3).paragraph_format.space_after = Pt(8)
+    doc.add_paragraph(p4).paragraph_format.space_after = Pt(12)
     
     # Sign off
     p_signoff = doc.add_paragraph()
