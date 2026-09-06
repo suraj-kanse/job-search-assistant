@@ -44,6 +44,7 @@ def format_report(jobs, zip_path):
 def main():
     parser = argparse.ArgumentParser(description="Job Search Assistant (India Edition) CLI")
     parser.add_argument("--search", action="store_true", help="Run job search and generate tailored materials")
+    parser.add_argument("--resume", action="store_true", help="Generate a general master 1-page ATS resume")
     parser.add_argument("--status", action="store_true", help="Display summary stats from application tracker")
     parser.add_argument("--update", nargs=2, metavar=("JOB_ID", "STATUS"), help="Update status of a specific job")
     parser.add_argument("--custom", action="store_true", help="Manually generate documents for a specific job description")
@@ -73,6 +74,20 @@ def main():
         add_jobs_to_tracker(jobs)
         
         print("\n" + format_report(jobs, zip_path))
+        
+    elif args.resume:
+        from profile_manager import load_profile
+        from document_generator import create_resume
+        profile = load_profile()
+        general_job = {
+            "title": "Software Engineer / Full-Stack Developer",
+            "company": "General / Master Profile",
+            "snippet": "Python, Django, JavaScript, TypeScript, React.js, Node.js, Express.js, MySQL, MongoDB, REST APIs, Git, Software Engineering",
+            "location": "India / Remote"
+        }
+        output_filename = "Suraj_Kanse_Resume.docx"
+        create_resume(general_job, profile, output_filename)
+        print(f"Successfully generated master 1-page ATS resume: {output_filename}")
         
     elif args.status:
         summary = get_tracker_summary()
