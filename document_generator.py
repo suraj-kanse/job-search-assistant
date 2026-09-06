@@ -80,9 +80,29 @@ def tailor_profile_data(job, profile):
     tailored["skills"] = rebuilt_skills
     return tailored
 
+def select_relevant_items(items, jd_text, min_k=2, max_k=4):
+    """Ranks and selects the top 2-4 most impactful items based on JD keyword relevance."""
+    if not items:
+        return []
+    import re
+    words = [w.lower() for w in re.findall(r'\w+', jd_text) if len(w) > 2]
+    
+    scored = []
+    for item in items:
+        score = 0
+        item_lower = item.lower()
+        for w in words:
+            if w in item_lower:
+                score += 1
+        scored.append((item, score))
+        
+    ranked = [item for item, s in sorted(scored, key=lambda x: x[1], reverse=True)]
+    return ranked[:max(min_k, min(max_k, len(ranked)))]
+
 def create_resume(job, profile, output_path):
     """Generates an ATS-compliant resume calibrated for a strict 1-page format."""
     doc = docx.Document()
+    jd_text = (job["title"] + " " + job.get("snippet", "")).lower()
     
     # Page setup - 0.55 inch compact margins for 1-page density
     for section in doc.sections:
@@ -109,7 +129,7 @@ def create_resume(job, profile, output_path):
     contact_p = doc.add_paragraph()
     contact_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     contact_p.paragraph_format.space_after = Pt(6)
-    contact_info = f"{profile['phone']}  •  {profile['email']}  •  {profile['location']['current']}\nLinkedIn: {profile['linkedin']}  •  GitHub: {profile['github']}"
+    contact_info = f"{profile['phone']} - {profile['email']} - {profile['location']['current']}\nLinkedIn: {profile['linkedin']} - GitHub: {profile['github']}"
     run = contact_p.add_run(contact_info)
     run.font.size = Pt(9)
 
@@ -160,7 +180,7 @@ def create_resume(job, profile, output_path):
         p_title = doc.add_paragraph()
         p_title.paragraph_format.space_before = Pt(2)
         p_title.paragraph_format.space_after = Pt(1)
-        run_role = p_title.add_run(f"{exp['role']} — {exp['company']} ({exp['duration']})")
+        run_role = p_title.add_run(f"{exp['role']} - {exp['company']} ({exp['duration']})")
         run_role.bold = True
         
         for detail in exp.get("details", []):
@@ -175,7 +195,7 @@ def create_resume(job, profile, output_path):
         p_proj = doc.add_paragraph()
         p_proj.paragraph_format.space_before = Pt(3)
         p_proj.paragraph_format.space_after = Pt(1)
-        run_proj = p_proj.add_run(f"{proj['name']} ({proj['duration']}) — Tech Stack: {proj['tech_stack']}")
+        run_proj = p_proj.add_run(f"{proj['name']} ({proj['duration']}) - Tech Stack: {proj['tech_stack']}")
         run_proj.bold = True
         
         for detail in proj.get("details", []):
@@ -189,18 +209,30 @@ def create_resume(job, profile, output_path):
     for edu in profile.get("education", []):
         p_edu = doc.add_paragraph()
         p_edu.paragraph_format.space_after = Pt(2)
-        run_deg = p_edu.add_run(f"{edu['degree']} — {edu['college']} | {edu['duration']} | CGPA: {edu['cgpa']}")
+        run_deg = p_edu.add_run(f"{edu['degree']} - {edu['college']} | {edu['duration']} | CGPA: {edu['cgpa']}")
         run_deg.bold = True
 
-    # 7. Certifications & Languages (Compact 1-line groupings)
+    # 7. Certifications (Smart selection of top 2-4 relevant)
     certs = profile.get("certifications", [])
     if certs:
+        selected_certs = select_relevant_items(certs, jd_text, min_k=2, max_k=4)
         add_section_heading("Certifications")
         p_cert = doc.add_paragraph()
         p_cert.paragraph_format.left_indent = Inches(0.1)
         p_cert.paragraph_format.space_after = Pt(2)
-        p_cert.add_run("  •  ".join(certs[:4]))
+        p_cert.add_run(" - ".join(selected_certs))
 
+    # 8. Achievements (Smart selection of top 2-4 relevant)
+    achievements = profile.get("achievements", [])
+    if achievements:
+        selected_achievements = select_relevant_items(achievements, jd_text, min_k=2, max_k=3)
+        add_section_heading("Achievements & Leadership")
+        p_ach = doc.add_paragraph()
+        p_ach.paragraph_format.left_indent = Inches(0.1)
+        p_ach.paragraph_format.space_after = Pt(2)
+        p_ach.add_run(" - ".join(selected_achievements))
+
+    # 9. Languages
     languages = profile.get("languages", {})
     if languages:
         add_section_heading("Languages")
@@ -208,7 +240,7 @@ def create_resume(job, profile, output_path):
         p_lang.paragraph_format.left_indent = Inches(0.1)
         p_lang.paragraph_format.space_after = Pt(2)
         lang_items = [f"{lang} ({lvl})" for lang, lvl in languages.items()]
-        p_lang.add_run("  •  ".join(lang_items))
+        p_lang.add_run(" - ".join(lang_items))
 
     # Save
     doc.save(output_path)
