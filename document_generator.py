@@ -130,25 +130,27 @@ def add_hyperlink(paragraph, url, text, color="1D63B8", underline=False):
     paragraph._p.append(hyperlink)
     return hyperlink
 
-def create_resume(job, profile, output_path):
-    """Generates an ATS-compliant resume calibrated strictly for 1-page PDF export with clickable links."""
+TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+BASE_RESUME_TEMPLATE = os.path.join(TEMPLATES_DIR, "base_resume.docx")
+BASE_COVER_LETTER_TEMPLATE = os.path.join(TEMPLATES_DIR, "base_cover_letter.docx")
+
+def build_pristine_base_resume(profile, template_path):
+    """Builds the pristine 1-page base resume template with clickable links and calibrated layout."""
+    os.makedirs(os.path.dirname(template_path), exist_ok=True)
     doc = docx.Document()
-    jd_text = (job["title"] + " " + job.get("snippet", "")).lower()
     
-    # Page setup - 0.48 inch compact margins to guarantee strict 1-page PDF export
     for section in doc.sections:
         section.top_margin = Inches(0.48)
         section.bottom_margin = Inches(0.48)
         section.left_margin = Inches(0.55)
         section.right_margin = Inches(0.55)
 
-    # Base styling
     style = doc.styles['Normal']
     font = style.font
     font.name = 'Calibri'
     font.size = Pt(9.2)
 
-    # 1. Header (Centered Name & Contact with clickable links)
+    # 1. Header
     title_p = doc.add_paragraph()
     title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     title_p.paragraph_format.space_before = Pt(0)
@@ -161,7 +163,6 @@ def create_resume(job, profile, output_path):
     contact_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     contact_p.paragraph_format.space_before = Pt(0)
     contact_p.paragraph_format.space_after = Pt(4)
-    
     contact_p.add_run(f"{profile['phone']} - ")
     add_hyperlink(contact_p, f"mailto:{profile['email']}", profile['email'])
     contact_p.add_run(f" - {profile['location']['current']}\nLinkedIn: ")
@@ -169,7 +170,6 @@ def create_resume(job, profile, output_path):
     contact_p.add_run(" - GitHub: ")
     add_hyperlink(contact_p, f"https://{profile['github']}", profile['github'])
 
-    # Helper function for standardized section headings
     def add_section_heading(text):
         p = doc.add_paragraph()
         p.paragraph_format.space_before = Pt(4.5)
@@ -177,19 +177,18 @@ def create_resume(job, profile, output_path):
         run = p.add_run(text)
         run.bold = True
         run.font.size = Pt(10.5)
-        
-    # 2. Professional Summary
+
+    # 2. Summary
     add_section_heading("Professional Summary")
     summary_p = doc.add_paragraph()
     summary_p.paragraph_format.space_before = Pt(0)
     summary_p.paragraph_format.space_after = Pt(2)
-    summary_text = (
+    summary_p.add_run(
         "Information Technology undergraduate with hands-on experience building full-stack and "
         "backend applications using Python, Django, JavaScript, React, Node.js, and SQL/NoSQL databases. "
         "Developed and deployed web applications featuring REST APIs, authentication, role-based access control, "
         "database integration, and automated data/resume processing through internship and academic projects."
     )
-    summary_p.add_run(summary_text)
 
     # 3. Technical Skills
     add_section_heading("Technical Skills")
@@ -220,7 +219,6 @@ def create_resume(job, profile, output_path):
         p_title.paragraph_format.space_after = Pt(0.5)
         run_role = p_title.add_run(f"{exp['role']} - {exp['company']} ({exp['duration']})")
         run_role.bold = True
-        
         for detail in exp.get("details", []):
             p_bullet = doc.add_paragraph(style='List Bullet')
             p_bullet.paragraph_format.space_before = Pt(0)
@@ -236,7 +234,6 @@ def create_resume(job, profile, output_path):
         p_proj.paragraph_format.space_after = Pt(0.5)
         run_proj = p_proj.add_run(f"{proj['name']} ({proj['duration']}) - Tech Stack: {proj['tech_stack']}")
         run_proj.bold = True
-        
         for detail in proj.get("details", []):
             p_bullet = doc.add_paragraph(style='List Bullet')
             p_bullet.paragraph_format.space_before = Pt(0)
@@ -244,7 +241,6 @@ def create_resume(job, profile, output_path):
             p_bullet.paragraph_format.left_indent = Inches(0.2)
             p_bullet.add_run(detail)
 
-        # Include clickable project links if present
         links = proj.get("links", {})
         if links:
             p_link = doc.add_paragraph()
@@ -271,27 +267,25 @@ def create_resume(job, profile, output_path):
         run_deg = p_edu.add_run(f"{edu['degree']} - {edu['college']} | {edu['duration']} | CGPA: {edu['cgpa']}")
         run_deg.bold = True
 
-    # 7. Certifications (Smart selection of top 2-4 relevant)
+    # 7. Certifications
     certs = profile.get("certifications", [])
     if certs:
-        selected_certs = select_relevant_items(certs, jd_text, min_k=2, max_k=4)
         add_section_heading("Certifications")
         p_cert = doc.add_paragraph()
         p_cert.paragraph_format.left_indent = Inches(0.1)
         p_cert.paragraph_format.space_before = Pt(0)
         p_cert.paragraph_format.space_after = Pt(1.5)
-        p_cert.add_run(" - ".join(selected_certs))
+        p_cert.add_run(" - ".join(certs[:4]))
 
-    # 8. Achievements (Smart selection of top 2-3 relevant)
+    # 8. Achievements
     achievements = profile.get("achievements", [])
     if achievements:
-        selected_achievements = select_relevant_items(achievements, jd_text, min_k=2, max_k=3)
         add_section_heading("Achievements & Leadership")
         p_ach = doc.add_paragraph()
         p_ach.paragraph_format.left_indent = Inches(0.1)
         p_ach.paragraph_format.space_before = Pt(0)
         p_ach.paragraph_format.space_after = Pt(1.5)
-        p_ach.add_run(" - ".join(selected_achievements))
+        p_ach.add_run(" - ".join(achievements[:3]))
 
     # 9. Languages
     languages = profile.get("languages", {})
@@ -304,15 +298,13 @@ def create_resume(job, profile, output_path):
         lang_items = [f"{lang} ({lvl})" for lang, lvl in languages.items()]
         p_lang.add_run(" - ".join(lang_items))
 
-    # Save
-    doc.save(output_path)
+    doc.save(template_path)
 
-
-def create_cover_letter(job, profile, output_path):
-    """Generates a customized cover letter preserving the exact base template, layout, and clickable links."""
+def build_pristine_base_cover_letter(profile, template_path):
+    """Builds the pristine base cover letter template."""
+    os.makedirs(os.path.dirname(template_path), exist_ok=True)
     doc = docx.Document()
     
-    # Page setup - Standard 0.75 inch clean margins
     for section in doc.sections:
         section.top_margin = Inches(0.75)
         section.bottom_margin = Inches(0.75)
@@ -324,7 +316,7 @@ def create_cover_letter(job, profile, output_path):
     font.name = 'Calibri'
     font.size = Pt(10)
 
-    # 1. Header (Left-aligned as in user's base template)
+    # 1. Header
     title_p = doc.add_paragraph()
     title_p.paragraph_format.space_after = Pt(2)
     run_name = title_p.add_run(profile["name"].upper())
@@ -352,7 +344,6 @@ def create_cover_letter(job, profile, output_path):
     contact_p2.add_run("  |  ")
     add_hyperlink(contact_p2, f"https://{profile['github']}", f"https://{profile['github']}")
 
-    # Section Title: COVER LETTER
     cl_heading = doc.add_paragraph()
     cl_heading.paragraph_format.space_before = Pt(4)
     cl_heading.paragraph_format.space_after = Pt(6)
@@ -360,29 +351,17 @@ def create_cover_letter(job, profile, output_path):
     run_cl.bold = True
     run_cl.font.size = Pt(12)
 
-    # Salutation
     p_salutation = doc.add_paragraph()
     p_salutation.paragraph_format.space_after = Pt(8)
     p_salutation.add_run("Dear Hiring Manager,")
     
-    # Target tech stack derivation from JD
-    jd_text = (job["title"] + " " + job.get("snippet", "")).lower()
-    tech_phrase = "React and TypeScript"
-    if "python" in jd_text or "django" in jd_text:
-        tech_phrase = "Python, Django, and modern web frameworks"
-    elif "node" in jd_text or "express" in jd_text:
-        tech_phrase = "React, Node.js, and TypeScript"
-
-    # Paragraph 1
     p1 = (
-        f"I’m interested in applying for the {job['title']} at {job['company']}. "
-        f"I’m especially drawn to the strong focus your team places on engineering fundamentals. "
-        f"As an IT undergraduate, I’ve had the chance to build production-level, user-facing web applications using "
-        f"{tech_phrase}. I’m now looking for an Opportunity where I can continue learning while also contributing in a meaningful way "
-        f"to your Team or Company."
+        "I’m interested in applying for the {ROLE} at {COMPANY}. "
+        "I’m especially drawn to the strong focus your team places on engineering fundamentals. "
+        "As an IT undergraduate, I’ve had the chance to build production-level, user-facing web applications using "
+        "{TECH_PHRASE}. I’m now looking for an Opportunity where I can continue learning while also contributing in a meaningful way "
+        "to your Team or Company."
     )
-    
-    # Paragraph 2 (Project Spotlight)
     p2 = (
         "In my recent project, I’ve worked on a full-stack Web platform- ‘Counselling Centre, AVCOE’ in which I built a responsive front end "
         "using React and TypeScript. The goal was to make it easier for Students to access Support. I developed role-based dashboards for "
@@ -391,15 +370,11 @@ def create_cover_letter(job, profile, output_path):
         "get Help. I also added Reporting tools that simplified record-Handling process. Overall, this project helped me get better at building "
         "beautiful Interfaces, Managing States, and working closely with Back-end systems."
     )
-    
-    # Paragraph 3 (Culture, Growth & Japanese)
     p3 = (
-        f"Beyond technical skills, I am highly motivated by {job['company']}’s culture of continuous growth and industrial exposure. Furthermore, I am "
+        "Beyond technical skills, I am highly motivated by {COMPANY}’s culture of continuous growth and industrial exposure. Furthermore, I am "
         "currently learning Japanese (N5 level), which reflects my strong interest in cross-cultural communication and my long-term goal of "
         "building a career as an engineer in a global setting."
     )
-    
-    # Paragraph 4 (Closing)
     p4 = (
         "I’d welcome the opportunity to connect and contribute to your Team’s or Company’s goals. I appreciate you considering my "
         "application and hope to contribute and learn from your organization soon."
@@ -410,10 +385,64 @@ def create_cover_letter(job, profile, output_path):
     doc.add_paragraph(p3).paragraph_format.space_after = Pt(8)
     doc.add_paragraph(p4).paragraph_format.space_after = Pt(12)
     
-    # Sign off
     p_signoff = doc.add_paragraph()
     p_signoff.add_run(f"Regards,\n{profile['name']}\n{profile['phone']}\n{profile['email']}")
+    doc.save(template_path)
+
+def create_resume(job, profile, output_path):
+    """Copies the uploaded base resume format and applies in-place JD keyword optimization."""
+    if not os.path.exists(BASE_RESUME_TEMPLATE):
+        build_pristine_base_resume(profile, BASE_RESUME_TEMPLATE)
+        
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    shutil.copy(BASE_RESUME_TEMPLATE, output_path)
     
+    # In-place optimize the copy
+    doc = docx.Document(output_path)
+    jd_text = (job["title"] + " " + job.get("snippet", "")).lower()
+    
+    # 1. Select top certifications and achievements for this specific JD
+    certs = profile.get("certifications", [])
+    achievements = profile.get("achievements", [])
+    selected_certs = select_relevant_items(certs, jd_text, min_k=2, max_k=4)
+    selected_achievements = select_relevant_items(achievements, jd_text, min_k=2, max_k=3)
+    
+    # 2. Iterate paragraphs in the copied document and update dynamic sections in place
+    for idx, p in enumerate(doc.paragraphs):
+        if p.text == "Certifications" and idx + 1 < len(doc.paragraphs):
+            next_p = doc.paragraphs[idx + 1]
+            next_p.text = " - ".join(selected_certs)
+        elif p.text == "Achievements & Leadership" and idx + 1 < len(doc.paragraphs):
+            next_p = doc.paragraphs[idx + 1]
+            next_p.text = " - ".join(selected_achievements)
+            
+    doc.save(output_path)
+
+def create_cover_letter(job, profile, output_path):
+    """Copies the base cover letter format and customizes it in-place for the target role & company."""
+    if not os.path.exists(BASE_COVER_LETTER_TEMPLATE):
+        build_pristine_base_cover_letter(profile, BASE_COVER_LETTER_TEMPLATE)
+        
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    shutil.copy(BASE_COVER_LETTER_TEMPLATE, output_path)
+    
+    doc = docx.Document(output_path)
+    jd_text = (job["title"] + " " + job.get("snippet", "")).lower()
+    
+    tech_phrase = "React and TypeScript"
+    if "python" in jd_text or "django" in jd_text:
+        tech_phrase = "Python, Django, and modern web frameworks"
+    elif "node" in jd_text or "express" in jd_text:
+        tech_phrase = "React, Node.js, and TypeScript"
+
+    for p in doc.paragraphs:
+        if "{ROLE}" in p.text or "{COMPANY}" in p.text or "{TECH_PHRASE}" in p.text:
+            text = p.text
+            text = text.replace("{ROLE}", job["title"])
+            text = text.replace("{COMPANY}", job["company"])
+            text = text.replace("{TECH_PHRASE}", tech_phrase)
+            p.text = text
+
     doc.save(output_path)
 
 
