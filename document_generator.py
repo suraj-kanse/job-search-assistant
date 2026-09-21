@@ -389,6 +389,29 @@ def build_pristine_base_cover_letter(profile, template_path):
     p_signoff.add_run(f"Regards,\n{profile['name']}\n{profile['phone']}\n{profile['email']}")
     doc.save(template_path)
 
+BASE_LATEX_TEMPLATE = os.path.join(TEMPLATES_DIR, "base_resume.tex")
+
+def create_latex_resume(job, profile, output_path):
+    """Copies base_resume.tex and customizes it in-place for the target JD."""
+    if not os.path.exists(BASE_LATEX_TEMPLATE):
+        return
+    with open(BASE_LATEX_TEMPLATE, "r", encoding="utf-8") as f:
+        tex_content = f.read()
+        
+    jd_text = (job["title"] + " " + job.get("snippet", "")).lower()
+    certs = profile.get("certifications", [])
+    achievements = profile.get("achievements", [])
+    selected_certs = select_relevant_items(certs, jd_text, min_k=2, max_k=4)
+    selected_achievements = select_relevant_items(achievements, jd_text, min_k=2, max_k=3)
+    
+    # Replace certs block
+    cert_items = "\n\\vspace{-5pt}\n".join([f"\\item \\textbf{{{c.split(' - ')[0]}}} - {c.split(' - ')[1] if ' - ' in c else c}" for c in selected_certs])
+    # Replace achievements block
+    ach_items = "\n\\vspace{-5pt}\n".join([f"\\item \\textbf{{{a.split(' - ')[0]}}} - {a.split(' - ')[1] if ' - ' in a else a}" for a in selected_achievements])
+    
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(tex_content)
+
 def create_resume(job, profile, output_path):
     """Copies the uploaded base resume format and applies in-place JD keyword optimization."""
     if not os.path.exists(BASE_RESUME_TEMPLATE):
@@ -464,12 +487,15 @@ def generate_application_bundle(jobs, output_dir="dist"):
         
         name_clean = profile["name"].replace(" ", "_")
         resume_name = f"{name_clean}_Resume_{company_clean}_{role_clean}.docx"
+        resume_tex_name = f"{name_clean}_Resume_{company_clean}_{role_clean}.tex"
         cl_name = f"{name_clean}_CoverLetter_{company_clean}.docx"
         
         resume_path = os.path.join(job_dir, resume_name)
+        resume_tex_path = os.path.join(job_dir, resume_tex_name)
         cl_path = os.path.join(job_dir, cl_name)
         
         create_resume(job, profile, resume_path)
+        create_latex_resume(job, profile, resume_tex_path)
         create_cover_letter(job, profile, cl_path)
         
         generated_files.append((job["company"], job_dir))

@@ -1,0 +1,180 @@
+\documentclass[a4paper,10pt]{article}
+
+\usepackage[margin=0.3in]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fontawesome5}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{pgffor}
+
+\newcommand{\langrating}[2]{%
+  \foreach \i in {1,...,#1}{\textbullet\ }%
+  \ifnum#2>0
+    \foreach \i in {1,...,#2}{$\circ$\ }%
+  \fi
+}
+
+\pagestyle{empty}
+\setlength{\parindent}{4pt}
+\setlength{\parskip}{2pt}
+
+\titleformat{\section}
+{\large\bfseries}
+{}{0em}{}[\titlerule]
+
+\titlespacing*{\section}{0pt}{1pt}{1pt}
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Header
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{center}
+    {\Huge \textbf{SURAJ KANSE}}\\[6pt]
+
+    \faPhone\ +91 8698801090 \quad | \quad
+    \faEnvelope\ \href{mailto:surajkanse88@gmail.com}{surajkanse88@gmail.com} \quad | \quad
+    \faMapMarker*\ Sangamner, Maharashtra \\
+    \faLinkedin\ \href{https://linkedin.com/in/surajkanse}{linkedin.com/in/surajkanse}
+    \quad | \quad
+    \faGithub\ \href{https://github.com/suraj-kanse}{github.com/suraj-kanse}
+\end{center}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Professional Summary
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\vspace{-13pt}
+
+\section*{Professional Summary}
+\textbf{Information Technology undergraduate with hands-on experience building full-stack and backend applications using Python, Django, JavaScript, React, Node.js, and SQL/NoSQL databases. Developed and deployed web applications featuring REST APIs, authentication, role-based access control, database integration, and automated data/resume processing through internship and academic projects.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Technical Skills
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Technical Skills}
+
+\begin{tabularx}{\textwidth}{>{\bfseries}l X}
+Languages & Python, JavaScript, TypeScript, C, C++ \\ 
+Backend & Django, Node.js, Express.js, REST APIs, Mongoose \\ 
+Frontend & React.js, HTML5, CSS3, Tailwind CSS, Framer Motion\\ 
+Databases & MySQL, MongoDB \\
+Security & JWT, bcrypt, RBAC, CORS, Helmet \\
+Tools & Git, GitHub, VS Code, Vite \\
+\end{tabularx}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Internship
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Internship Experience}
+
+\textbf{Full Stack Web Development with AI Tools Intern - Edunet Foundation $|$ EY}
+\hfill Dec 2025 - Jan 2026
+\begin{itemize}[leftmargin=*,itemsep=0pt]
+\vspace{-10pt}
+\item Developed the \textbf{Resume Skill Gap Analyzer \& HR Screening Platform} using Django, Python, and MySQL to automate resume screening and candidate skill analysis.
+\vspace{-5pt}
+\item Engineered a synonym-aware skill matching engine covering \textbf{200+ technical skills across 13 domains and 25+ synonym groups} to reduce false-negative matches.
+\vspace{-5pt}
+\item Integrated \textbf{PyPDF2 and python-docx} for automated PDF/DOCX resume extraction and processing.
+\vspace{-5pt}
+\item Collaborated using \textbf{Git/GitHub} to develop Built HR analytics workflows with \textbf{candidate filtering, skill-gap analysis, and PDF reporting.}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Projects
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Projects}
+
+\textbf{Counselling Centre, AVCOE -- \footnotesize{\textit{React, TypeScript, Node.js, Express.js, MongoDB, Tailwind CSS, Vite, Vercel}}}
+\hfill Jan 2026 - Mar 2026
+\vspace{-10pt}
+
+\begin{itemize}[leftmargin=*,itemsep=0pt]
+\item Developed and deployed a full-stack student counselling platform for AVCOE, supporting student support requests, appointment management, and confidential session records through role-based dashboards.
+\vspace{-5pt}
+\item Implemented \textbf{JWT authentication, RBAC, bcrypt, rate limiting, CORS, and Helmet} to secure student and counselor workflows.
+\vspace{-5pt}
+\item Built REST APIs with Express.js and MongoDB, using Mongoose schemas and indexed queries for efficient record retrieval.
+\vspace{-5pt}
+\item Designed a responsive interface with \textbf{React, TypeScript, Tailwind CSS, and Framer Motion} and deployed the application on Vercel.
+\vspace{-5pt}
+\item Live: \url{https://counselling-centre-avcoe.vercel.app} -- Source Code: Private (Client Project)
+\end{itemize}
+
+\vspace{-4pt}
+
+\textbf{Resume Skill Gap Analyzer \& HR Screening Platform} - {\footnotesize{{Django, Python, MySQL, PyPDF2, python-docx, HTML, CSS, JavaScript, Bootstrap}}}
+\hfill Dec 2025 -- Jan 2026
+
+\textit{Developed during Full Stack Web Development Internship}
+\vspace{-10pt}
+
+\begin{itemize}[leftmargin=*,itemsep=0pt]
+\item Built a recruitment platform that parses PDF/DOCX resumes and matches candidate skills against job requirements.
+\item Developed Candidate and HR portals supporting resume analysis history, job management, candidate filtering, skill-gap recommendations, and PDF/JSON reporting.
+\vspace{-5pt}
+\item GitHub: \url{https://github.com/suraj-kanse/Resume-Skill-Gap-Analyzer}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Education
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Education}
+
+\textbf{Bachelor of Engineering - Information Technology -- {CGPA: 7.76/10.0 -- Amrutvahini College Of Engineering, Sangamner $|$ SPPU}}
+\hfill Aug 2023 -- Jun 2027
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Certifications
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Certifications}
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Full Stack Web Development with AI tools} - Edunet Foundation (Feb 2026)
+\vspace{-5pt}
+\item \textbf{SQL Certification} - Technorbit Infosystems (Feb 2026)
+\vspace{-5pt}
+\item \textbf{AI Skills Passport} - EY and Microsoft (Jan 2026)
+\vspace{-5pt}
+\item \textbf{Python Fullstack Developer Virtual Internship} - Eduskills Foundation (Sep 2025)
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Leadership & Activities
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Leadership \& Activities}
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{SITES Committee Member} - Society of Information Technology Engineering Students
+\vspace{-5pt}
+\item \textbf{Pitch Perfect Competition} - E-Cell, Entrepreneurship Cell
+\vspace{-5pt}
+\item \textbf{Smart India Hackathon 2024 \& 2025} - Participant
+\vspace{-5pt}
+\item \textbf{CodeSpark 24-Hour Hackathon} - Participant (Dept of IT, AVCOE)
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Languages
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Languages}
+
+\begin{tabular}{ll}
+    \textbf{English:} & \langrating{4}{1} (Fluent) \\
+    \textbf{Japanese:} & \langrating{2}{3} (Beginner) (N4 Learner) \\
+    \textbf{Hindi:} & \langrating{5}{0} (Native) \\
+    \textbf{Marathi:} & \langrating{5}{0} (Native) \\
+\end{tabular}
+
+\end{document}
