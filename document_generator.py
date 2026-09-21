@@ -391,10 +391,62 @@ def build_pristine_base_cover_letter(profile, template_path):
 
 BASE_LATEX_TEMPLATE = os.path.join(TEMPLATES_DIR, "base_resume.tex")
 
+def find_pdflatex():
+    """Finds the pdflatex executable path."""
+    p = shutil.which("pdflatex")
+    if p:
+        return p
+    candidates = [
+        r"C:\Users\suraj\AppData\Local\Programs\MiKTeX\miktex\bin\x64\pdflatex.exe",
+        r"C:\Program Files\MiKTeX\miktex\bin\x64\pdflatex.exe",
+        r"C:\Program Files (x86)\MiKTeX\miktex\bin\pdflatex.exe"
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return None
+
+def compile_latex_to_pdf(tex_path, output_dir=None):
+    """Compiles a .tex file directly to .pdf using pdflatex and cleans up temporary build files."""
+    compiler = find_pdflatex()
+    if not compiler:
+        return None
+    
+    if output_dir is None:
+        output_dir = os.path.dirname(os.path.abspath(tex_path))
+        
+    try:
+        import subprocess
+        cmd = [
+            compiler,
+            "-interaction=nonstopmode",
+            "-enable-installer",
+            f"-output-directory={output_dir}",
+            tex_path
+        ]
+        subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        
+        # Cleanup intermediate build artifacts (.aux, .log, .out)
+        base_name = os.path.splitext(os.path.basename(tex_path))[0]
+        for ext in [".aux", ".log", ".out"]:
+            aux_file = os.path.join(output_dir, base_name + ext)
+            if os.path.exists(aux_file):
+                try:
+                    os.remove(aux_file)
+                except Exception:
+                    pass
+                    
+        pdf_path = os.path.join(output_dir, base_name + ".pdf")
+        if os.path.exists(pdf_path):
+            return pdf_path
+    except Exception as e:
+        print(f"LaTeX compile warning: {e}")
+    return None
+
 def create_latex_resume(job, profile, output_path):
-    """Copies base_resume.tex and customizes it in-place for the target JD."""
+    """Copies base_resume.tex, customizes it in-place for the target JD, and compiles to .pdf."""
     if not os.path.exists(BASE_LATEX_TEMPLATE):
-        return
+        return None
     with open(BASE_LATEX_TEMPLATE, "r", encoding="utf-8") as f:
         tex_content = f.read()
         
@@ -404,13 +456,17 @@ def create_latex_resume(job, profile, output_path):
     selected_certs = select_relevant_items(certs, jd_text, min_k=2, max_k=4)
     selected_achievements = select_relevant_items(achievements, jd_text, min_k=2, max_k=3)
     
-    # Replace certs block
+    # In-place dynamic certs & achievements block replacements
+    # Format LaTeX itemize
     cert_items = "\n\\vspace{-5pt}\n".join([f"\\item \\textbf{{{c.split(' - ')[0]}}} - {c.split(' - ')[1] if ' - ' in c else c}" for c in selected_certs])
-    # Replace achievements block
     ach_items = "\n\\vspace{-5pt}\n".join([f"\\item \\textbf{{{a.split(' - ')[0]}}} - {a.split(' - ')[1] if ' - ' in a else a}" for a in selected_achievements])
     
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(tex_content)
+        
+    # Compile to PDF
+    pdf_result = compile_latex_to_pdf(output_path)
+    return pdf_result
 
 def create_resume(job, profile, output_path):
     """Copies the uploaded base resume format and applies in-place JD keyword optimization."""

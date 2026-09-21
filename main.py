@@ -77,7 +77,7 @@ def main():
         
     elif args.resume:
         from profile_manager import load_profile
-        from document_generator import create_resume
+        from document_generator import create_resume, create_latex_resume
         profile = load_profile()
         general_job = {
             "title": "Software Engineer / Full-Stack Developer",
@@ -86,8 +86,13 @@ def main():
             "location": "India / Remote"
         }
         output_filename = "Suraj_Kanse_Resume.docx"
+        output_tex = "Suraj_Kanse_Resume.tex"
         create_resume(general_job, profile, output_filename)
-        print(f"Successfully generated master 1-page ATS resume: {output_filename}")
+        pdf_res = create_latex_resume(general_job, profile, output_tex)
+        print(f"Successfully generated master 1-page ATS resumes:")
+        print(f"  - PDF: Suraj_Kanse_Resume.pdf (Direct LaTeX compiled)")
+        print(f"  - Word: {output_filename}")
+        print(f"  - LaTeX: {output_tex}")
         
     elif args.status:
         summary = get_tracker_summary()

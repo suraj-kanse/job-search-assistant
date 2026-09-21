@@ -4,3 +4,8 @@ __pycache__/
 !templates/*.docx
 *.xlsx
 *.zip
+*.aux
+*.log
+*.out
+*.pdf
+!templates/*.pdf
